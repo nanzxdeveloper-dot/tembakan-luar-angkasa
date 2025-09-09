@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+
+<html>
+<head>
+  <meta http-equiv="CONTENT-TYPE" content="text/html; charset=UTF-8">
+  <title>Hello, World!</title>
+</head>
+<body>
+  <h1>
+    Hello, World!
+  </h1>
+</body>
+</html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Space Blaster Pixel</title>
+  <style>
+    body {
+      margin: 0;
+      background: black;
+      overflow: hidden;
+    }
+    canvas {
+      display: block;
+      margin: auto;
+      background: #000;
+    }
+    #replay {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: white;
+      padding: 10px 20px;
+      border: none;
+      font-size: 18px;
+      display: none;
+      z-index: 1;
+    }
+    #score {
+      color: white;
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      font-family: monospace;
+      font-size: 18px;
+    }
+  </style>
+</head>
+<body>
+  <button id="replay">Replay</button>
+  <div id="score">Score: 0</div>
+  <canvas id="game" width="400" height="600"></canvas>
+
+  <script>
+    const canvas = document.getElementById("game");
+    const ctx = canvas.getContext("2d");
+    const replayBtn = document.getElementById("replay");
+    const scoreDisplay = document.getElementById("score");
+
+    let ship, bullets, ufos, score, gameOver;
+
+    function resetGame() {
+      ship = { x: 180, y: 550, width: 40, height: 20 };
+      bullets = [];
+      ufos = [];
+      score = 0;
+      gameOver = false;
+      replayBtn.style.display = "none";
+      scoreDisplay.innerText = "Score: 0";
+      spawnUFO();
+      update();
+    }
+
+    function drawPixelShip(x, y) {
+      ctx.fillStyle = "white";
+      ctx.fillRect(x + 10, y, 20, 10); // body
+      ctx.fillStyle = "cyan";
+      ctx.fillRect(x + 18, y - 5, 4, 5); // cockpit
+      ctx.fillStyle = "gray";
+      ctx.fillRect(x, y + 10, 40, 10); // wings
+    }
+
+    function drawPixelUFO(x, y) {
+      ctx.fillStyle = "red";
+      ctx.fillRect(x + 10, y + 5, 20, 5);
+      ctx.fillStyle = "orange";
+      ctx.fillRect(x, y + 10, 40, 5);
+    }
+
+    function spawnUFO() {
+      const x = Math.random() * 360;
+      ufos.push({ x: x, y: 0 });
+    }
+
+    function drawBullets() {
+      ctx.fillStyle = "lime";
+      bullets.forEach((b) => {
+        ctx.fillRect(b.x, b.y, 3, 10);
+        b.y -= 5;
+      });
+      bullets = bullets.filter((b) => b.y > 0);
+    }
+
+    function detectHits() {
+      ufos.forEach((ufo, ui) => {
+        bullets.forEach((b, bi) => {
+          if (
+            b.x < ufo.x + 40 &&
+            b.x + 3 > ufo.x &&
+            b.y < ufo.y + 20 &&
+            b.y + 10 > ufo.y
+          ) {
+            ufos.splice(ui, 1);
+            bullets.splice(bi, 1);
+            score += 100;
+            scoreDisplay.innerText = "Score: " + score;
+          }
+        });
+      });
+    }
+
+    function update() {
+      if (gameOver) return;
+
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      drawPixelShip(ship.x, ship.y);
+      drawBullets();
+
+      // Update & draw UFOs
+      ufos.forEach((ufo) => {
+        drawPixelUFO(ufo.x, ufo.y);
+        ufo.y += 2;
+
+        if (ufo.y + 20 > canvas.height) {
+          gameOver = true;
+          replayBtn.style.display = "block";
+        }
+      });
+
+      detectHits();
+
+      requestAnimationFrame(update);
+    }
+
+    // Touch control
+    canvas.addEventListener("touchmove", (e) => {
+      const touchX = e.touches[0].clientX - canvas.getBoundingClientRect().left;
+      ship.x = touchX - ship.width / 2;
+
+      if (ship.x < 0) ship.x = 0;
+      if (ship.x + ship.width > canvas.width) ship.x = canvas.width - ship.width;
+    });
+
+    // Auto shooting
+    setInterval(() => {
+      if (!gameOver) {
+        bullets.push({
+          x: ship.x + ship.width / 2 - 1.5,
+          y: ship.y
+        });
+      }
+    }, 300);
+
+    // UFO spawn
+    setInterval(() => {
+      if (!gameOver) spawnUFO();
+    }, 1000);
+
+    // Replay button
+    replayBtn.addEventListener("click", () => {
+      resetGame();
+    });
+
+    resetGame();
+  </script>
+</body>
+</html>
